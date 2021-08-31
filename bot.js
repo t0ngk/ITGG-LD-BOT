@@ -1,6 +1,7 @@
 const { Client, Intents, MessageActionRow, MessageButton, MessageEmbed, Collector } = require('discord.js');
 const axios = require("axios")
-
+const moment = require("moment")
+moment.locale('th')
 const client = new Client({ intents: ['GUILDS', 'GUILD_MESSAGES', 'GUILD_VOICE_STATES', "GUILD_MESSAGE_REACTIONS"] });
 
 const sec_color = {
@@ -16,7 +17,7 @@ const sec_emoji = {
   "nor": "🐦"
 }
 
-const commands = [{
+const list_commands = [{
   "name": "random",
   "description": "🎲🎲เรามาสุ่มผู้โชคดีกันดีกว่า🎲🎲",
   "options": [
@@ -124,12 +125,6 @@ const commands = [{
     },
     {
       "type": 3,
-      "name": "giver",
-      "description": "🖋️ชื่อคนให้คะแนน🖋️",
-      "required": true
-    },
-    {
-      "type": 3,
       "name": "mention",
       "description": "👨‍👩‍👧‍👦Mention คนได้กี่คนก็ได้แต่ห้ามเว้นวรรค **ห้ามเว้นวรรค**👨‍👩‍👧‍👦",
       "required": true
@@ -150,12 +145,6 @@ const commands = [{
       "type": 3,
       "name": "cause",
       "description": "❓หักเนื่องจากอะไร❓",
-      "required": true
-    },
-    {
-      "type": 3,
-      "name": "giver",
-      "description": "🖋️ชื่อคนลงหักคะแนน🖋️",
       "required": true
     },
     {
@@ -232,40 +221,40 @@ const commands = [{
 },
 {
   "name": "wheelspin",
-  "description": "ลอง"
+  "description": "🎡วงล้อเสี่ยงโชค (ตาละ 80 Token)🎡"
 },
 {
   "name": "givebuff",
-  "description": "ให้ Buff",
+  "description": "🧙‍♂️🧙‍♂️ให้ Buff🧙‍♂️🧙‍♂️",
   "options": [
     {
       "type": 3,
       "name": "buff",
-      "description": "Buff อะไรเอ๋ย",
+      "description": "🗡️🗡️Buff อะไรเอ๋ย🗡️🗡️",
       "required": true
     },
     {
       "type": 4,
       "name": "duration",
-      "description": "Buff นานแค่ไหน (นาที)",
+      "description": "⏲️⏲️Buff นานแค่ไหน (นาที)⏲️⏲️",
       "required": true
     },
     {
       "type": 3,
       "name": "mention",
-      "description": "@คน",
+      "description": "👨‍👩‍👧‍👦สามารถ Mention ได้หลายคน👨‍👩‍👧‍👦",
       "required": true
     }
   ]
 },
 {
   "name": "checkbuff",
-  "description": "check buff",
+  "description": "🔎check buff🔍",
   "options": [
     {
       "type": 6,
       "name": "mention",
-      "description": "Mention ให้คนเดียว",
+      "description": "🕵️**Mention ได้แค่คนเดียว**🕵️",
       "required": true
     }
   ]
@@ -278,12 +267,12 @@ client.once('ready', () => {
 });
 
 client.on("message", (message) => {
-  if (message.content == "!setup") {
+  if (message.content == "!update") {
     mes_id = message.guild.id
-    commands.forEach(data => {
+    list_commands.forEach(data => {
       client.application?.commands.create(data, mes_id)
     })
-    // message.delete()
+    message.delete()
   }
 })
 
@@ -374,67 +363,52 @@ client.on('interaction', async interaction => {
       interaction.reply("🗨️🤖 : อันนี้ของเล่นแอดมิน ไม่ให้ใช้หรอกอิอิ")
     }
   }
-  
-  function check_house(user) {
-    tmp_a = []
-    user.roles.cache.some(role_user => {
-      if (role_user.name == "GATE-OR" || role_user.name == "GATE-AND" || role_user.name == "GATE-NOR" || role_user.name == "GATE-NOT") {
-        tmp_a.push(role_user.name)
-      }
-    })
-    return tmp_a
-  }
 
   if (interaction.commandName == "bonus") {
-    const get_point = interaction.options.getInteger("point")
-    const get_topic = interaction.options.getString("topic")
-    const get_countdown = interaction.options.getInteger("countdown")
-    const users_role = []
-    const all_role = []
-    await interaction.reply("เตรียมตัว ระวังงงงงง")
-    await interaction.deleteReply()
-    let mess = await interaction.channel.send(`⏲️🔥 แจก ${get_point} Token เป็น เวลา ${get_countdown} วิ เพราะ __**${get_topic}**__ กดเลย!!!!! หมดแล้วหมดเลย ระวังเสียใจภายหลัง 🔥⏲️`)
-    mess.react("📌")
-    const filter = (reaction, user) => {
-      return reaction.emoji.name === '📌' && user.bot == false && reaction.message.id == mess.id;
-    };
-    const collector = mess.createReactionCollector({ filter, time: get_countdown * 1000 });
-
-    collector.on('collect', (reaction, user) => {
-      if (!user.bot){
-        interaction.guild.members.cache.some(user_info => {
-          if (user.id == user_info.id) {
-            all_role.push(user_info)
-          }
+    if (get_role(interaction)) {
+      const get_point = interaction.options.getInteger("point")
+      const get_topic = interaction.options.getString("topic")
+      const get_countdown = interaction.options.getInteger("countdown")
+      await interaction.reply("เตรียมตัว ระวังงงงงง")
+      await interaction.deleteReply()
+      let mess = await interaction.channel.send(`⏲️🔥 แจก ${get_point} Token เป็น เวลา ${get_countdown} วิ เพราะ __**${get_topic}**__ กดเลย!!!!! หมดแล้วหมดเลย ระวังเสียใจภายหลัง 🔥⏲️`)
+      mess.react("📌")
+      const filter = (reaction, user) => {
+        return reaction.emoji.name === '📌' && user.bot == false && reaction.message.id == mess.id;
+      };
+      const collector = mess.createReactionCollector({ filter, time: get_countdown * 1000 });
+  
+      collector.on('end',async collected => {
+        let all_user = []
+        collected.map(info => {
+          info.users.cache.some(user => {
+            interaction.guild.members.cache.some(get_user => {
+              if ((get_user.id == user.id) && !user.bot) {
+                all_user.push({
+                  "discord_id" : user.id,
+                  "coin" : get_point,
+                  "event" : get_topic,
+                  "giver" : interaction.member.displayName
+                })
+              }
+            })
+          })
         })
-      }
-    });
-
-    collector.on('end',async collected => {
-      let sum_user = 0
-      all_role.forEach(get_user => {
-        users_role.push(...check_house(get_user)) 
-      })
-      if (collected.size != 0) {
-        const payload = {
-          "and" : get_count(users_role,"GATE-AND") * get_point,
-          "or" : get_count(users_role,"GATE-OR") * get_point,
-          "nor" : get_count(users_role,"GATE-NOR") * get_point,
-          "not" : get_count(users_role,"GATE-NOT") * get_point
-        }
-        await axios.post("https://itgg.herokuapp.com/discord/gateCoin",payload)
-        .then(function(done) {       
-          collected.map(user => sum_user = user.count - 1)
-          mess.reply(`การแจก Token สิ้นสุดลงแล้ว มีผู้ได้ Token ทั้งหมด ${sum_user} คน  🎉🎉🎉`)
+        await axios.post('https://itgg.herokuapp.com/discord/coins',all_user)
+        .then(done => {
+          mess.reactions.removeAll()
+          mess.edit(`~~⏲️🔥 แจก ${get_point} Token เป็น เวลา ${get_countdown} วิ เพราะ __**${get_topic}**__ กดเลย!!!!! หมดแล้วหมดเลย ระวังเสียใจภายหลัง 🔥⏲️~~  ⚠️การแจกสิ้นสุดลงแล้ว⚠️`)
+          done.data.fail.forEach(user => {
+            interaction.channel.send(`🛑  <@${user}> คุณยังไม่ได้ยืนยันตัว กรุณายืนยันตัว(__**/auth**__) แล้วรีบแจ้ง GG Admin โดยด่วน  🛑`)
+          })
         })
-        .catch(function(err){
-          interaction.reply("⚠️ มีบางอย่างไม่ถุกต้องไปเรียก GG-Admin มาดู ⚠️")
+        .catch(err => {
+          interaction.channel.send("⚠️ มีบางอย่างไม่ถุกต้องไปเรียก GG-Admin มาดู ⚠️")
         })
-
-      }
-      mess.reactions.removeAll()
-      mess.edit(`~~⏲️🔥 แจก ${get_point} Token เป็น เวลา ${get_countdown} วิ เพราะ __**${get_topic}**__ กดเลย!!!!! หมดแล้วหมดเลย ระวังเสียใจภายหลัง 🔥⏲️~~  ⚠️การแจกสิ้นสุดลงแล้ว⚠️`)
-    });
+      });
+    } else {
+      interaction.reply("🗨️🤖 : อันนี้ของเล่นแอดมิน ไม่ให้ใช้หรอกอิอิ")
+    }
   }
   if (interaction.commandName == "givescore") {
     if (get_role(interaction)) {
@@ -442,20 +416,23 @@ client.on('interaction', async interaction => {
       const remove_syntax = /[<@!>]/g
       const remove_alhpa = /([^0123456789,])/g
       let member = interaction.options.getString("mention").replaceAll("><@!", ",").replaceAll(remove_syntax, "").replaceAll(remove_alhpa, "").split(",")
+      let get_all = []
+      let getevent = interaction.options.getString("event")
+      let getgiver = interaction.options.getString("giver")
       member.forEach((deq) => {
         if (!(interaction.guild.members.cache.some(userid => (userid.id == deq)))) {
           member = arrayremove(member, deq)
         }
       })
-      let getevent = interaction.options.getString("event")
-      let getgiver = interaction.options.getString("giver")
-      const payload = {
-        "discord_id": member,
-        "coin": score,
-        "event": getevent,
-        "giver": getgiver
-      }
-      await axios.post('https://itgg.herokuapp.com/discord/coins', payload)
+      member.forEach(user_id => {
+        get_all.push({
+          "discord_id" : user_id,
+          "coin" : score,
+          "event" : getevent,
+          "giver" : interaction.member.displayName
+        })
+      })
+      await axios.post('https://itgg.herokuapp.com/discord/coins', get_all)
         .then((req) => {
           const getres = req.data
           if (getres.success.length > 1) {
@@ -471,6 +448,7 @@ client.on('interaction', async interaction => {
           })
         })
         .catch((err) => {
+          interaction.channel.send("⚠️ มีบางอย่างไม่ถุกต้องไปเรียก GG-Admin มาดู ⚠️")
         })
     } else {
       interaction.reply("🗨️🤖 : เห้ยอย่าแอบเพิ่มคะแนนเองสิ : )")
@@ -482,26 +460,29 @@ client.on('interaction', async interaction => {
       const remove_syntax = /[<@!>]/g
       const remove_alhpa = /([^0123456789,])/g
       let member = interaction.options.getString("mention").replaceAll("><@!", ",").replaceAll(remove_syntax, "").replaceAll(remove_alhpa, "").split(",")
+      let get_all = []
+      let getcause = interaction.options.getString("cause")
+      let getevent = interaction.options.getString("event")
       member.forEach((deq) => {
         if (!(interaction.guild.members.cache.some(userid => (userid.id == deq)))) {
           member = arrayremove(member, deq)
         }
       })
-      let getcause = interaction.options.getString("cause")
-      let getgiver = interaction.options.getString("giver")
-      const payload = {
-        "discord_id": member,
-        "coin": -score,
-        "event": getcause,
-        "giver": getgiver
-      }
-      await axios.post('https://itgg.herokuapp.com/discord/coins', payload)
+      member.forEach(user_id => {
+        get_all.push({
+          "discord_id" : user_id,
+          "coin" : score,
+          "event" : String(getevent),
+          "giver" : interaction.member.displayName
+        })
+      })
+      await axios.post('https://itgg.herokuapp.com/discord/coins', get_all)
         .then((req) => {
           const getres = req.data
           if (getres.success.length > 1) {
-            interaction.reply(`${getres.success.length} คน ถูกตัดคะแนน ${getres.coin} Token! เพราะว่า __${getcause}__`)
+            interaction.reply(`${getres.success.length} คน ถูกตัดคะแนน ${score} Token! เพราะว่า __${getcause}__`)
           } else if (getres.success.length == 1) {
-            interaction.reply(`<@${getres.success}> ถูกตัดคะแนน ${getres.coin} Token! เพราะว่า __${getcause}__`)
+            interaction.reply(`<@${getres.success}> ถูกตัดคะแนน ${score} Token! เพราะว่า __${getcause}__`)
           }
           else {
             interaction.reply("⚠️ ไม่พบผู้ใช้งานในระบบ ⚠️")
@@ -511,6 +492,7 @@ client.on('interaction', async interaction => {
           })
         })
         .catch((err) => {
+          console.log(err)
         })
     } else {
       interaction.reply("🗨️🤖 : เห้ยอย่าแอบหักคะแนนเองสิ : (")
@@ -595,105 +577,84 @@ client.on('interaction', async interaction => {
       })
   }
   if (interaction.commandName == "roulette"){
-    await interaction.reply("กำลังจัดโต๊ะสำหรับ Roulette")
-    let mess = await interaction.channel.send("คิด Text ไม่ออกใครก็ได้คิดให้หน่อย")
-    const get_countdown = interaction.options.getInteger("countdown")
-    const get_point = interaction.options.getInteger("point")
-    mess.react("🔵")
-    mess.react("🔴")
-    mess.react("🟢")
-    let blue = []
-    let red = []
-    let green = []
-    const roulette_filter = (reaction, user) => {
-      return user.bot == false && reaction.message.id == mess.id;
-    };
-    const roulette_collector = mess.createReactionCollector({ roulette_filter, time: get_countdown * 1000 });
-
-    roulette_collector.on("end",async collected => {
-      collected.map(user => {user.users.cache.some(user_info => {
-        if (!user_info.bot) {
-          interaction.guild.members.cache.some(get_id => {
-            if(get_id.id == user_info.id){
-              if(user.emoji.name === '🔵'){
-                blue.push(get_id)
+    if (get_role(interaction)) {      
+      await interaction.reply("กำลังจัดโต๊ะสำหรับ Roulette")
+      let mess = await interaction.channel.send("คิด Text ไม่ออกใครก็ได้คิดให้หน่อย")
+      const get_countdown = interaction.options.getInteger("countdown")
+      const get_point = interaction.options.getInteger("point")
+      mess.react("🔵")
+      mess.react("🔴")
+      mess.react("🟢")
+      let all = []
+      const roulette_filter = (reaction, user) => {
+        return user.bot == false && reaction.message.id == mess.id;
+      };
+      const roulette_collector = mess.createReactionCollector({ roulette_filter, time: get_countdown * 1000 });
+  
+      roulette_collector.on("end",async collected => {
+        let mutipie = {
+          "blue" : -1,
+          "red" : -1,
+          "green" : -1
+        }
+        let rng = Math.floor(Math.random() * 100)
+        if (rng > 0 && rng <= 45) {
+          interaction.channel.send("Blue Win")
+          mutipie.blue = 1
+        }else if(rng > 45 && rng <= 90){
+          interaction.channel.send("Red Win")
+          mutipie.red = 1
+        }else if(rng < 90){
+          interaction.channel.send("Green Win")
+          mutipie.green = 2
+        }
+        let winner = 0
+        collected.map(user => {user.users.cache.some(user_info => {
+          if (!user_info.bot) {
+            interaction.guild.members.cache.some(get_id => {
+              if(get_id.id == user_info.id){
+                if(user.emoji.name === '🔵'){
+                  all.push({
+                    "id" : get_id.id,
+                    "coin" : (get_point * mutipie.blue)
+                  })
+                  winner += 1
+                }
+                if(user.emoji.name === '🔴'){
+                  all.push({
+                    "id" : get_id.id,
+                    "coin" : (get_point * mutipie.red)
+                  })
+                  winner += 1
+                }
+                if(user.emoji.name === '🟢'){
+                  all.push({
+                    "id" : get_id.id,
+                    "coin" : (get_point * mutipie.green)
+                  })
+                  winner += 1
+                }
               }
-              if(user.emoji.name === '🔴'){
-                red.push(get_id)
-              }
-              if(user.emoji.name === '🟢'){
-                green.push(get_id)
-              }
-            }
+            })
+          }
+        })})
+        mess.reactions.removeAll()
+        await axios.post("https://itgg.herokuapp.com/discord/gateCoin",all)
+        .then(done => {
+          interaction.channel.send(`ผู้ชนะทั้งหมด ${winner} คน`)
+          done.data.fail.forEach(user => {
+            interaction.channel.send(`🛑  <@${user}> คุณยังไม่ได้ยืนยันตัว กรุณายืนยันตัว(__**/auth**__) แล้วรีบแจ้ง GG Admin โดยด่วน  🛑`)
           })
-        }
-      })})
-      let user_blue = []
-      let user_red = []
-      let user_green = []
-      
-      blue.forEach(get_user => {
-        user_blue.push(...check_house(get_user))
+        })
+        .catch(() => {
+          interaction.channel.send("⚠️ มีบางอย่างไม่ถุกต้องไปเรียก GG-Admin มาดู ⚠️")
+        })
       })
-      red.forEach(get_user => {
-        user_red.push(...check_house(get_user))
-      })
-      green.forEach(get_user => {
-        user_green.push(...check_house(get_user))
-      })
-      let payload ={}
-      let rng = Math.floor(Math.random() * 100)
-      let get_and = (get_count(user_blue, "GATE-AND") * get_point) + (get_count(user_red, "GATE-AND") * get_point) + (get_count(user_green, "GATE-AND") * get_point)
-      let get_or = (get_count(user_blue, "GATE-OR") * get_point) + (get_count(user_red, "GATE-OR") * get_point) + (get_count(user_green, "GATE-OR") * get_point)
-      let get_nor = (get_count(user_blue, "GATE-NOR") * get_point) + (get_count(user_red, "GATE-NOR") * get_point) + (get_count(user_green, "GATE-NOR") * get_point)
-      let get_not = (get_count(user_blue, "GATE-NOT") * get_point) + (get_count(user_red, "GATE-NOT") * get_point) + (get_count(user_green, "GATE-NOT") * get_point)
-      if (rng > 0 && rng <= 45) {
-        interaction.channel.send("Blue Win")
-        payload = {
-          "and" : (get_count(user_blue, "GATE-AND") * get_point * 2) - get_and,
-          "or" : (get_count(user_blue, "GATE-OR") * get_point * 2) - get_or,
-          "nor" : (get_count(user_blue, "GATE-NOR") * get_point * 2) - get_nor,
-          "not" : (get_count(user_blue, "GATE-NOT") * get_point * 2) - get_not,
-        }
-      }else if(rng > 45 && rng <= 90){
-        interaction.channel.send("Red Win")
-        payload = {
-          "and" : (get_count(user_red, "GATE-AND") * get_point * 2) - get_and,
-          "or" : (get_count(user_red, "GATE-OR") * get_point * 2) - get_or,
-          "nor" : (get_count(user_red, "GATE-NOR") * get_point * 2) - get_nor,
-          "not" : (get_count(user_red, "GATE-NOT") * get_point * 2) - get_not,
-        }
-      }else if(rng < 90){
-        interaction.channel.send("Green Win")
-        payload = {
-          "and" : (get_count(user_green, "GATE-AND") * get_point * 4) - get_and,
-          "or" : (get_count(user_green, "GATE-OR") * get_point * 4) - get_or,
-          "nor" : (get_count(user_green, "GATE-NOR") * get_point * 4) - get_nor,
-          "not" : (get_count(user_green, "GATE-NOT") * get_point * 4) - get_not,
-        }
-      }
-      mess.reactions.removeAll()
-      await axios.post("https://itgg.herokuapp.com/discord/gateCoin",payload)
-      .then(done => {
-        interaction.channel.send(`This is Debug Don't mind me
-  and : ${payload["and"]}
-  or : ${payload["or"]}
-  nor : ${payload["nor"]}
-  not : ${payload["not"]}
-        `)
-      })
-      .catch(() => {
-        interaction.reply("⚠️ มีบางอย่างไม่ถุกต้องไปเรียก GG-Admin มาดู ⚠️")
-      })
-    })
+    } else {
+      interaction.reply("🗨️🤖 : อันนี้ของเล่นแอดมิน ไม่ให้ใช้หรอกอิอิ")
+    }
   }
   if (interaction.commandName == "wheelspin"){
-    let user = []
-    interaction.guild.members.cache.some(user_info => {
-      if (user_info.id == interaction.member.id) {
-        user = check_house(user_info)
-      }
-    })
     let rng = Math.floor(Math.random() * 100)
     let score = 0
     if (rng > 0 && rng <= 15){
@@ -707,65 +668,82 @@ client.on('interaction', async interaction => {
     }else if(rng > 90 && rng <= 100){
       score = 0
     }
-    await axios.post("https://itgg.herokuapp.com/discord/gateCoin",{
-      "and" : (get_count(user, "GATE-AND") * score) - 80,
-      "or" : (get_count(user, "GATE-OR") * score) - 80,
-      "nor" : (get_count(user, "GATE-NOR") * score) - 80,
-      "not" : (get_count(user, "GATE-NOT") * score) - 80
-    }).then(done => {
-      interaction.reply(String(score - 80))
-    }).catch(err => {
-      interaction.reply("⚠️ มีบางอย่างไม่ถุกต้องไปเรียก GG-Admin มาดู ⚠️")
-    })
-  }
-  if (interaction.commandName == "givebuff"){
-    const mention = interaction.options.getString("mention").replaceAll("><@",",").replaceAll(/([^0123456789,])/g,"").split(",")
-    const buff = interaction.options.getString("buff")
-    const duration = interaction.options.getInteger("duration") * 60
-    const payload = {
-      "discord_id" : mention,
-      "name" : buff,
-      "exp" : duration
-    }
-    await axios.post('https://itgg.herokuapp.com/discord/addBuff',payload)
+    await axios.post('https://itgg.herokuapp.com/discord/coins',[
+      {"discord_id" : interaction.member.id,"coin":score - 80}
+    ])
     .then(done => {
-      if(mention.length == 1){
-        interaction.reply(`<@${mention[0]}> ได้รับ Buff __**${buff}**__ เป็นเวลา ${duration / 60} นาที  🎉🎉🎉🎉`)
+      if (done.data.fail.length != 0){
+        interaction.channel.send(`🛑  <@${done.data.fail}> คุณยังไม่ได้ยืนยันตัว กรุณายืนยันตัว(__**/auth**__) แล้วรีบแจ้ง GG Admin โดยด่วน  🛑`)
       }else{
-        interaction.reply(`${mention.length} คน ได้รับ Buff __**${buff}**__ เป็นเวลา ${duration / 60} นาที  🎉🎉🎉🎉`)
-      }
-    })
-    .catch(err => {
-      interaction.reply("⚠️ มีบางอย่างไม่ถุกต้องไปเรียก GG-Admin มาดู ⚠️")
-    })
-  }
-  if (interaction.commandName == "checkbuff"){
-    let mention = interaction.options.getMember("mention")
-    await axios.get(`https://itgg.herokuapp.com/discord/getBuff/${mention.id}`)
-    .then(done => {
-      let all_buff = []
-      done.data.map(buff => {
-        all_buff.push({
-          "name" : buff.buff_name,
-          "value" : "IDK"
-        })
-      })
-      const embed = {
-        "type": "rich",
-        "title": `Check Buff`,
-        "description": "",
-        "color": 0x007bff,
-        "fields": all_buff,
-        "author": {
-          "name": `${mention.user.username}`,
-          "icon_url": `https://cdn.discordapp.com/avatars/${mention.user.id}/${mention.user.avatar}.png?size=128`
+        if (score - 80 > 0) {
+          interaction.reply(`ยินดีด้วยคุณได้รับ ${score - 80} Token!  🎉🎉🎉🎉`)
+        }else if(score - 80 == 0){
+          interaction.reply(`แย่จังคุณได้คืนทุน`)
+        }else{
+          interaction.reply(`แย่จังคุณเสียไป ${score - 80} Token!`)
         }
       }
-      console.log(embed)
     })
     .catch(err => {
       console.log(err)
     })
+  }
+  if (interaction.commandName == "givebuff"){
+    if (get_role(interaction)) {
+      const mention = interaction.options.getString("mention").replaceAll("><@",",").replaceAll(/([^0123456789,])/g,"").split(",")
+      const buff = interaction.options.getString("buff")
+      const duration = interaction.options.getInteger("duration") * 60
+      const payload = {
+        "discord_id" : mention,
+        "name" : buff,
+        "exp" : duration
+      }
+      await axios.post('https://itgg.herokuapp.com/discord/addBuff',payload)
+      .then(done => {
+        if(mention.length == 1){
+          interaction.reply(`<@${mention[0]}> ได้รับ Buff __**${buff}**__ เป็นเวลา ${duration / 60} นาที  🎉🎉🎉🎉`)
+        }else{
+          interaction.reply(`${mention.length} คน ได้รับ Buff __**${buff}**__ เป็นเวลา ${duration / 60} นาที  🎉🎉🎉🎉`)
+        }
+      })
+      .catch(err => {
+        interaction.reply("⚠️ มีบางอย่างไม่ถุกต้องไปเรียก GG-Admin มาดู ⚠️")
+      })
+    } else {
+      interaction.reply("🗨️🤖 : อันนี้ของเล่นแอดมิน ไม่ให้ใช้หรอกอิอิ")
+    }
+  }
+  if (interaction.commandName == "checkbuff"){
+    if (get_role(interaction)) {
+      let mention = interaction.options.getMember("mention")
+      await axios.get(`https://itgg.herokuapp.com/discord/getBuff/${mention.id}`)
+      .then(done => {
+        let all_buff = []
+        done.data.map(buff => {
+          all_buff.push({
+            "name" : `__${buff.buff_name}__`,
+            "value" : `${moment(buff.expireAt).fromNow()} จะหมดเวลา`
+          })
+        })
+        const embed = {
+          "type": "rich",
+          "title": `Check Buff`,
+          "description": "",
+          "color": 0x007bff,
+          "fields": all_buff,
+          "author": {
+            "name": `${mention.user.username}`,
+            "icon_url": `https://cdn.discordapp.com/avatars/${mention.user.id}/${mention.user.avatar}.png?size=128`
+          }
+        }
+        interaction.reply({embeds: [embed]})
+      })
+      .catch(err => {
+        console.log(err)
+      })
+    } else {
+      interaction.reply("🗨️🤖 : อันนี้ของเล่นแอดมิน ไม่ให้ใช้หรอกอิอิ")
+    }
   }
 })
 
