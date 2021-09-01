@@ -4,7 +4,7 @@ module.exports = async (Discord, interaction, axios, { get_role }) => {
   if (get_role(interaction)) {
     let mention = interaction.options.getMember("mention");
     await axios
-      .get(`https://itgg.herokuapp.com/discord/getBuff/${mention.id}`)
+      .get(`/discord/getBuff/${mention.id}`)
       .then((done) => {
         let all_buff = [];
         done.data.map((buff) => {

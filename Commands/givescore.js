@@ -26,7 +26,7 @@ module.exports = async (Discord, interaction, axios, { get_role }) => {
       });
     });
     await axios
-      .post("https://itgg.herokuapp.com/discord/coins", get_all)
+      .post("/discord/coins", get_all)
       .then((req) => {
         const getres = req.data;
         if (getres.success.length > 1) {

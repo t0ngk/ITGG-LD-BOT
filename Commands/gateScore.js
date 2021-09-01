@@ -12,7 +12,7 @@ const sec_emoji = {
 };
 module.exports = async ({ MessageEmbed }, interaction, axios, { get_role }) => {
   await axios
-    .get("https://itgg.herokuapp.com/")
+    .get("/")
     .then((res) => {
       const get_gate = interaction.options.getString("gate");
       const sorted_leader = res.data.sort(function (a, b) {

@@ -69,7 +69,7 @@ module.exports = async (Discord, interaction, axios, { get_role }) => {
       });
       mess.reactions.removeAll();
       await axios
-        .post("https://itgg.herokuapp.com/discord/gateCoin", all)
+        .post("/discord/gateCoin", all)
         .then((done) => {
           interaction.channel.send(`ผู้ชนะทั้งหมด ${winner} คน`);
           done.data.fail.forEach((user) => {

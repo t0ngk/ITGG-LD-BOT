@@ -1,7 +1,9 @@
 const Discord = require("discord.js");
 const axios = require("axios");
+const axiosInstance = axios.create({
+  baseURL: "https://itgg.herokuapp.com",
+});
 const globalFunc = require("./global_function.js");
-
 module.exports = async (interaction) => {
   if (!interaction.isCommand()) return;
 
@@ -20,6 +22,6 @@ module.exports = async (interaction) => {
 
   function command(name, path) {
     if (interaction.commandName != name) return false;
-    require(path)(Discord, interaction, axios, globalFunc);
+    require(path)(Discord, interaction, axiosInstance, globalFunc);
   }
 };

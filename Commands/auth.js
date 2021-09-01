@@ -11,7 +11,7 @@ module.exports = async (Discord, interaction, axios, { get_role }) => {
       return;
     }
     await axios
-      .post("https://itgg.herokuapp.com/discord/register", {
+      .post("/discord/register", {
         discord_id: interaction.member.id,
         std_id: String(getstd_id),
         name: getname,

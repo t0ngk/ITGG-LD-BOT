@@ -13,7 +13,7 @@ module.exports = async (Discord, interaction, axios, { get_role }) => {
     score = 0;
   }
   await axios
-    .post("https://itgg.herokuapp.com/discord/coins", [
+    .post("/discord/coins", [
       { discord_id: interaction.member.id, coin: score - 80 },
     ])
     .then((done) => {

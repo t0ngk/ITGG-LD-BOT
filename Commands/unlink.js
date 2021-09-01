@@ -1,7 +1,7 @@
 module.exports = async (Discord, interaction, axios, { get_role }) => {
   await axios
     .delete(
-      `https://itgg.herokuapp.com/discord/register/${interaction.member.id}`
+      `/discord/register/${interaction.member.id}`
     )
     .then((res) => {
       if (res.data == "Your discord is unlinked") {
