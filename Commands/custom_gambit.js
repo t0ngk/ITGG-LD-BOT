@@ -11,6 +11,7 @@ var emojiStringToArray = function (str) {
   };
 
 module.exports = async (Discord, interaction, axios, { get_role }) => {
+  if (get_role(interaction)) {
     let get_emoji = emojiStringToArray(interaction.options.getString('emoji'))
     let get_description = interaction.options.getString('description')
     let get_bet = interaction.options.getInteger('bet')
@@ -59,4 +60,7 @@ module.exports = async (Discord, interaction, axios, { get_role }) => {
         interaction.channel.send("⚠️ มีบางอย่างไม่ถุกต้องไปเรียก GG-Admin มาดู ⚠️")
       })
     })
+  }else {
+    interaction.reply("🗨️🤖 : อันนี้ของเล่นแอดมิน ไม่ให้ใช้หรอกอิอิ");
+  }
   }
